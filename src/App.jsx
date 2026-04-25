@@ -167,6 +167,7 @@ function reducer(state, action) {
 
     case "SET_ACTIVE": {
       const prev = state.cameras.find(c => c.active);
+
       const recentlyUsed = prev
         ? [...new Set([prev.id, ...state.recentlyUsed])].slice(0, 3)
         : state.recentlyUsed;
@@ -181,6 +182,11 @@ function reducer(state, action) {
         }))
       };
     }
+
+    default:
+      return state;
+  }
+}
 
     case "APPLY_PRESET": {
       const preset = state.presets[action.camId]?.find(p => p.id === action.presetId);
