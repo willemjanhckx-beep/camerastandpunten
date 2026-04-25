@@ -173,17 +173,19 @@ function reducer(state, action) {
     case "CLEAR_HL_CAM":   return {...state,highlightedCam:null};
 
 case "LOAD_STATE": {
-  const cameras = action.data.cameras.map(c => ({
+  const cams = action?.data?.cameras ?? state.cameras;
+
+  const rebuiltCams = cams.map(c => ({
     ...c,
-    active: c.id === action.data.activeCamId
+    active: c.id === action?.data?.activeCamId
   }));
 
   return {
     ...state,
-    cameras,
-    presets: buildPresets(cameras), // 🔥 BELANGRIJK
-    activeCamId: action.data.activeCamId,
-    recentlyUsed: [] // reset om rare suggesties te vermijden
+    cameras: rebuiltCams,
+    presets: buildPresets(rebuiltCams),
+    activeCamId: action?.data?.activeCamId ?? state.activeCamId,
+    recentlyUsed: [],
   };
 }
 
