@@ -173,12 +173,15 @@ function reducer(state, action) {
       };
 
     case "APPLY_PRESET": {
-      const preset = state.presets[action.camId]?.find(p => p.id === action.presetId);
-      if (!preset) return state;
-      const sec = state.sections.find(s => s.id === preset.sectionId);
-      if (!sec) return state;
       const cam = state.cameras.find(c => c.id === action.camId);
-if (!cam || !sec) return state;
+if (!cam) return state;
+
+const preset = state.presets[action.camId]?.find(p => p.id === action.presetId);
+if (!preset) return state;
+
+const sec = state.sections.find(s => s.id === preset.sectionId);
+if (!sec) return state;
+
       return {
         ...state,
         recentlyUsed: addRecent(state, action.camId),
