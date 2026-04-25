@@ -665,16 +665,27 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-  if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
 
-  const style = document.createElement("style");
-  style.textContent = `...`;
-  document.head.appendChild(style);
+    const style = document.createElement("style");
+    style.textContent = `...`;
+    document.head.appendChild(style);
 
-  return () => {
-    document.head.removeChild(style);
-  };
-}, []);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  useEffect(() => {
+    const check = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    check(); // initial check
+    window.addEventListener("resize", check);
+
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   if(isMobile) return (
     <div style={{display:"flex",flexDirection:"column",height:"100dvh",background:"#080a16",overflow:"hidden"}}>
