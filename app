@@ -540,20 +540,40 @@ function LiveStatusBar({ state }) {
 const inp={padding:"6px 8px",borderRadius:"6px",border:"1px solid #1e2140",fontSize:"9px",fontFamily:"monospace",background:"#0c0e1e",color:"#aaa",width:"100%",outline:"none"};
 
 function SupabasePanel({ state, dispatch }) {
-  const [url,setUrl]=useState("https://camerastandpunten.vercel.app");const [key,setKey]=useState("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2bHBqZ3hzYXBoYXZvYmN4c2duIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwOTU1NjgsImV4cCI6MjA5MjY3MTU2OH0.8edbuhgoSsHVCyX-p_TGa-LrE4B5gRZF_tqkRm5Wj-g");
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const [testing,setTesting]=useState(false);const [saving,setSaving]=useState(false);const [loading,setLoading]=useState(false);
   const [connected,setConnected]=useState(false);const [open,setOpen]=useState(false);const [msg,setMsg]=useState(null);
 
-  const testConn=async()=>{
-    if(!url||!key){setMsg({ok:false,text:"Vul URL en Key in"});return;}
-    setTesting(true);setMsg(null);
-    try{
-      const res=await fetch(`${url}/rest/v1/camera_states?limit=1`,{headers:{apikey:key,Authorization:`Bearer ${key}`}});
-      if(res.ok||res.status===406){setConnected(true);setMsg({ok:true,text:"Verbinding OK ✓"});}
-      else throw new Error(`HTTP ${res.status}`);
-    }catch(e){setMsg({ok:false,text:`Fout: ${e.message}`});}
-    setTesting(false);
-  };
+const testConn = async () => {
+  if (!url || !key) {
+    setMsg({ ok: false, text: "Env variables ontbreken" });
+    return;
+  }
+
+  setTesting(true);
+  setMsg(null);
+
+  try {
+    const res = await fetch(`${url}/rest/v1/camera_states?limit=1`, {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+      },
+    });
+
+    if (res.ok || res.status === 406) {
+      setConnected(true);
+      setMsg({ ok: true, text: "Verbinding OK ✓" });
+    } else {
+      throw new Error(`HTTP ${res.status}`);
+    }
+  } catch (e) {
+    setMsg({ ok: false, text: `Fout: ${e.message}` });
+  }
+
+  setTesting(false);
+};
 
   const saveState=async()=>{
     if(!connected){setMsg({ok:false,text:"Eerst verbinding testen"});return;}
