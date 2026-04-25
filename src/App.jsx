@@ -156,9 +156,9 @@ const mkInitState = () => {
 };
 
 const addRecent = (state, camId) => {
-  const prev = state.cameras.find(c => c.active);
-  if (!prev || prev.id === camId) return state.recentlyUsed;
-  return [...new Set([prev.id, ...state.recentlyUsed])].slice(0, 3);
+  const prevId = state.activeCamId;
+  if (!prevId || prevId === camId) return state.recentlyUsed;
+  return [...new Set([prevId, ...state.recentlyUsed])].slice(0, 3);
 };
 
 function reducer(state, action) {
@@ -178,6 +178,7 @@ function reducer(state, action) {
       const sec = state.sections.find(s => s.id === preset.sectionId);
       if (!sec) return state;
       const cam = state.cameras.find(c => c.id === action.camId);
+      if (!cam) return state;
       return {
         ...state,
         recentlyUsed: addRecent(state, action.camId),
@@ -239,6 +240,9 @@ const W = 800, H = 580;
 function StageMap({ state, dispatch, highlightSectionId }) {
   const svgRef   = useRef(null);
   const dragging = useRef(null);
+  const sectionMap = useMemo(() => {
+  return Object.fromEntries(state.sections.map(s => [s.id, s]));
+}, [state.sections]);
 
   const camTargets = useMemo(() => {
     const t = {};
@@ -344,7 +348,7 @@ function StageMap({ state, dispatch, highlightSectionId }) {
       {/* ── Aim lines ── */}
       {state.cameras.map(cam => {
         const tId = camTargets[cam.id]; if (!tId) return null;
-        const sec = state.sections.find(s => s.id === tId); if (!sec) return null;
+        const sec = sectionMap[tId]; if (!sec) return null;
         const c   = secCenter(sec);
         const fov = fovPoly(cam);
         return (
@@ -360,7 +364,7 @@ function StageMap({ state, dispatch, highlightSectionId }) {
       {/* ── Active target box ── */}
       {state.cameras.filter(c => c.active).map(cam => {
         const tId = camTargets[cam.id]; if (!tId) return null;
-        const sec = state.sections.find(s => s.id === tId); if (!sec) return null;
+        const sec = sectionMap[tId]; if (!sec) return null;
         return (
           <rect key={`tgt${cam.id}`}
             x={sec.x - 3} y={sec.y - 3} width={sec.w + 6} height={sec.h + 6} rx={5}
@@ -368,14 +372,27 @@ function StageMap({ state, dispatch, highlightSectionId }) {
             style={{ transition: "all 0.35s" }} />
         );
       })}
+      
+{/* ── Next-shot highlight ── */}
+{highlightSectionId && (() => {
+  const sec = sectionMap[highlightSectionId];
+  if (!sec) return null;
 
-      {/* ── Next-shot highlight ── */}
-      {highlightSectionId && (() => {
-        const sec = state.sections.find(s => s.id === highlightSectionId); if (!sec) return null;
-        return <rect x={sec.x - 5} y={sec.y - 5} width={sec.w + 10} height={sec.h + 10} rx={7}
-          fill="#FFD44720" stroke="#FFD447" strokeWidth="2" opacity="0.9" />;
-      })()}
-
+  return (
+    <rect
+      x={sec.x - 5}
+      y={sec.y - 5}
+      width={sec.w + 10}
+      height={sec.h + 10}
+      rx={7}
+      fill="#FFD44720"
+      stroke="#FFD447"
+      strokeWidth="2"
+      opacity="0.9"
+    />
+  );
+})()}
+      
       {/* ── Orchestra sections ── */}
       {state.sections.map(sec => {
         const isAimed = Object.values(camTargets).includes(sec.id);
@@ -512,8 +529,7 @@ function NextShotModule({ state, dispatch }) {
   }, [targetSec, state.cameras, state.recentlyUsed, avoidRecent]);
 
   const applyBest = (cam) => {
-    const preset = state.presets[cam.id]?.find(p =>
-      state.sections.find(s => s.id === p.sectionId && s.id === targetSec?.id)
+      const preset = state.presets[cam.id]?.find(p => p.sectionId === targetSec?.id);
     );
     if (preset) dispatch({ type: "APPLY_PRESET", camId: cam.id, presetId: preset.id });
     else        dispatch({ type: "SET_ACTIVE", id: cam.id });
@@ -691,6 +707,7 @@ function SupabasePanel({ state, dispatch }) {
     if (!connected) { setMsg({ ok: false, text: "Eerst verbinding testen" }); return; }
     setBusyKey("save", true); setMsg(null);
     try {
+      const cleanCameras = state.cameras.map(({ active, ...rest }) => rest);
       const body = JSON.stringify({
         id:         "main",
         cameras:    state.cameras,         // store as JSONB (no JSON.stringify needed — fetch does it)
