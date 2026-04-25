@@ -178,7 +178,7 @@ function reducer(state, action) {
       const sec = state.sections.find(s => s.id === preset.sectionId);
       if (!sec) return state;
       const cam = state.cameras.find(c => c.id === action.camId);
-      if (!cam) return state;
+if (!cam || !sec) return state;
       return {
         ...state,
         recentlyUsed: addRecent(state, action.camId),
@@ -217,7 +217,12 @@ function reducer(state, action) {
       const raw   = action.data?.cameras;
       const actId = action.data?.activeCamId ?? state.activeCamId;
       if (!Array.isArray(raw) || raw.length === 0) return state;
-      const cams  = raw.map(c => ({ ...c, active: c.id === actId }));
+      const cams = raw.map(c => ({
+  ...c,
+  active: c.id === actId,
+  presetId: c.presetId ?? null
+}));
+
       return {
         ...state,
         cameras:      cams,
@@ -528,9 +533,10 @@ function NextShotModule({ state, dispatch }) {
       .sort((a, b) => b.score - a.score);
   }, [targetSec, state.cameras, state.recentlyUsed, avoidRecent]);
 
-  const applyBest = (cam) => {
-      const preset = state.presets[cam.id]?.find(p => p.sectionId === targetSec?.id);
-    );
+const applyBest = (cam) => {
+  const preset = state.presets[cam.id]?.find(
+    p => p.sectionId === targetSec?.id
+  );
     if (preset) dispatch({ type: "APPLY_PRESET", camId: cam.id, presetId: preset.id });
     else        dispatch({ type: "SET_ACTIVE", id: cam.id });
     dispatch({ type: "CLEAR_TARGET" });
@@ -710,7 +716,7 @@ function SupabasePanel({ state, dispatch }) {
       const cleanCameras = state.cameras.map(({ active, ...rest }) => rest);
       const body = JSON.stringify({
         id:         "main",
-        cameras:    state.cameras,         // store as JSONB (no JSON.stringify needed — fetch does it)
+        cameras:    cleanCameras,         // store as JSONB (no JSON.stringify needed — fetch does it)
         active_cam: state.activeCamId,
         updated_at: new Date().toISOString(),
       });
