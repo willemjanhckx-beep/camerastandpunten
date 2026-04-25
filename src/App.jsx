@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect, useCallback, useReducer, useMemo } from "react";
 
 // ─────────────────────────────────────────────────────────────────
@@ -554,8 +553,8 @@ function LiveStatusBar({ state }) {
 const inp={padding:"6px 8px",borderRadius:"6px",border:"1px solid #1e2140",fontSize:"9px",fontFamily:"monospace",background:"#0c0e1e",color:"#aaa",width:"100%",outline:"none"};
 
 function SupabasePanel({ state, dispatch }) {
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const url = import.meta.env.VITE_SUPABASE_URL;
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const [testing,setTesting]=useState(false);const [saving,setSaving]=useState(false);const [loading,setLoading]=useState(false);
   const [connected,setConnected]=useState(false);const [open,setOpen]=useState(false);const [msg,setMsg]=useState(null);
 
