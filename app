@@ -665,14 +665,17 @@ export default function App() {
   const [state, dispatch] = useReducer(reducer, initState);
   const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(()=>{
-    const style=document.createElement("style");
-    style.textContent=`@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@700;900&display=swap');*{box-sizing:border-box;margin:0;padding:0;}body{background:#080a16;overflow:hidden;}::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-track{background:#0a0c1e;}::-webkit-scrollbar-thumb{background:#2a2d50;border-radius:2px;}@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.6;transform:scale(0.85);}}`;
-    document.head.appendChild(style);
-    const check=()=>setIsMobile(window.innerWidth<768);
-    check(); window.addEventListener("resize",check);
-    return ()=>{document.head.removeChild(style);window.removeEventListener("resize",check);};
-  },[]);
+  useEffect(() => {
+  if (typeof window === "undefined") return;
+
+  const style = document.createElement("style");
+  style.textContent = `...`;
+  document.head.appendChild(style);
+
+  return () => {
+    document.head.removeChild(style);
+  };
+}, []);
 
   if(isMobile) return (
     <div style={{display:"flex",flexDirection:"column",height:"100dvh",background:"#080a16",overflow:"hidden"}}>
