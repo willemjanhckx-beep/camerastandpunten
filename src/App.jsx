@@ -853,7 +853,7 @@ export default function App() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
- // ── MOBILE ──────────────────────────────────────────────────────
+// ── MOBILE ──────────────────────────────────────────────────────
 if (isMobile) return (
   <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "#080a16", overflow: "hidden" }}>
 
@@ -887,7 +887,13 @@ if (isMobile) return (
     </button>
 
     {/* Stage map */}
-    <div style={{ flexShrink: 0, height: "42dvh", position: "relative", background: "#0a0c18", borderBottom: "1px solid #12142a" }}>
+    <div style={{
+      flexShrink: 0,
+      height: "42dvh",
+      position: "relative",
+      background: "#0a0c18",
+      borderBottom: "1px solid #12142a"
+    }}>
       <StageMap state={state} dispatch={dispatch} highlightSectionId={state.targetSection} />
       <MapToolbar state={state} dispatch={dispatch} />
     </div>
@@ -895,25 +901,42 @@ if (isMobile) return (
     {/* Content */}
     <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
 
+      {/* CAMERAS - FIXED 5 PANEL GRID */}
       <div style={{ padding: "10px 10px 6px", borderBottom: "1px solid #12142a", flexShrink: 0 }}>
-        <div style={{ fontSize: "8px", color: "#2a2d50", fontFamily: "monospace", letterSpacing: "2px", marginBottom: "8px" }}>
+
+        <div style={{
+          fontSize: "8px",
+          color: "#2a2d50",
+          fontFamily: "monospace",
+          letterSpacing: "2px",
+          marginBottom: "8px"
+        }}>
           CAMERAS
         </div>
 
-        <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
-          {state.cameras.map(cam => (
-            <CameraCard
-              key={cam.id}
-              cam={cam}
-              presets={state.presets[cam.id]}
-              state={state}
-              dispatch={dispatch}
-              isMobile
-            />
+        {/* FIXED GRID (PATCH 3) */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(5, 1fr)",
+          gap: "6px",
+          width: "100%"
+        }}>
+          {state.cameras.slice(0, 5).map(cam => (
+            <div key={cam.id} style={{ minWidth: 0 }}>
+              <CameraCard
+                cam={cam}
+                presets={state.presets[cam.id]}
+                state={state}
+                dispatch={dispatch}
+                isMobile
+              />
+            </div>
           ))}
         </div>
+
       </div>
 
+      {/* NEXT SHOT */}
       <div style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ padding: "10px 14px 4px", borderBottom: "1px solid #12142a" }}>
           <div style={{ fontSize: "8px", color: "#2a2d50", fontFamily: "monospace", letterSpacing: "2px" }}>
@@ -924,107 +947,6 @@ if (isMobile) return (
       </div>
 
       <SupabasePanel state={state} dispatch={dispatch} />
-    </div>
-  </div>
-);
-
-
-// ── DESKTOP ─────────────────────────────────────────────────────
-return (
-  <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#080a16", overflow: "hidden" }}>
-
-    {/* Header */}
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "10px 20px",
-      background: "#080a16",
-      borderBottom: "1px solid #12142a",
-      flexShrink: 0
-    }}>
-      <div>
-        <div style={{ fontFamily: "'Exo 2',sans-serif", fontSize: "15px", fontWeight: "900", color: "#FFD447", letterSpacing: "4px" }}>
-          CAMERA PLANNER
-        </div>
-        <div style={{ fontSize: "8px", color: "#2a2d50", letterSpacing: "3px", marginTop: "1px" }}>
-          HENRY LE BŒUF HALL · MUZIEKKAPEL VAN DE GIDSEN
-        </div>
-      </div>
-
-      <LiveStatusBar state={state} />
-    </div>
-
-    {/* MAIN */}
-    <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
-
-      {/* MAP */}
-      <div style={{
-        flex: 1,
-        position: "relative",
-        minWidth: 0,
-        background: "radial-gradient(ellipse at 50% 35%, #0e1030 0%, #080a16 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "16px"
-      }}>
-        <div style={{
-          width: "100%",
-          maxWidth: "840px",
-          aspectRatio: "800/580",
-          border: "1px solid #1a1d35",
-          borderRadius: "14px",
-          overflow: "hidden",
-          boxShadow: "0 0 80px #00001a",
-          position: "relative"
-        }}>
-          <StageMap state={state} dispatch={dispatch} highlightSectionId={state.targetSection} />
-        </div>
-
-        <MapToolbar state={state} dispatch={dispatch} />
-      </div>
-
-      {/* RIGHT PANEL */}
-      <div style={{
-        width: "300px",
-        minWidth: "270px",
-        background: "#080a16",
-        borderLeft: "1px solid #12142a",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden"
-      }}>
-
-        <div style={{ overflowY: "auto", padding: "12px", borderBottom: "1px solid #12142a", maxHeight: "50%" }}>
-          <div style={{ fontSize: "8px", color: "#2a2d50", fontFamily: "monospace", letterSpacing: "2px", marginBottom: "10px" }}>
-            CAMERAS — {state.cameras.filter(c => c.active).length} ACTIEF
-          </div>
-
-          {state.cameras.map(cam => (
-            <CameraCard
-              key={cam.id}
-              cam={cam}
-              presets={state.presets[cam.id]}
-              state={state}
-              dispatch={dispatch}
-              isMobile={false}
-            />
-          ))}
-        </div>
-
-        <div style={{ flex: 1, overflowY: "auto", borderBottom: "1px solid #12142a" }}>
-          <div style={{ padding: "10px 14px 6px", borderBottom: "1px solid #12142a" }}>
-            <div style={{ fontSize: "8px", color: "#2a2d50", fontFamily: "monospace", letterSpacing: "2px" }}>
-              VOLGENDE SHOT
-            </div>
-          </div>
-
-          <NextShotModule state={state} dispatch={dispatch} />
-        </div>
-
-        <SupabasePanel state={state} dispatch={dispatch} />
-      </div>
     </div>
   </div>
 );
