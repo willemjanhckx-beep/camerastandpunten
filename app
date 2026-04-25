@@ -171,6 +171,16 @@ function reducer(state, action) {
     case "TOGGLE_LABELS":  return {...state,showLabels:!state.showLabels};
     case "SET_HL_CAM":     return {...state,highlightedCam:action.id};
     case "CLEAR_HL_CAM":   return {...state,highlightedCam:null};
+case "LOAD_STATE":
+  return {
+    ...state,
+    cameras: action.data.cameras.map(c => ({
+      ...c,
+      active: c.id === action.data.activeCamId
+    })),
+    activeCamId: action.data.activeCamId,
+    recentlyUsed: [] // reset om rare suggesties te vermijden
+  };
     default: return state;
   }
 }
@@ -581,7 +591,7 @@ const testConn = async () => {
     try{
       await fetch(`${url}/rest/v1/camera_states`,{method:"POST",
         headers:{apikey:key,Authorization:`Bearer ${key}`,"Content-Type":"application/json",Prefer:"resolution=merge-duplicates"},
-        body:JSON.stringify({id:"main",cameras:JSON.stringify(state.cameras),active_cam:state.activeCamId,updated_at:new Date().toISOString()})});
+        body:JSON.stringify({id:"main",cameras:state.cameras,active_cam:state.activeCamId,updated_at:new Date().toISOString()})});
       setMsg({ok:true,text:"Opgeslagen ✓"});
     }catch(e){setMsg({ok:false,text:`Fout: ${e.message}`});}
     setSaving(false);
@@ -593,7 +603,7 @@ const testConn = async () => {
     try{
       const res=await fetch(`${url}/rest/v1/camera_states?id=eq.main&limit=1`,{headers:{apikey:key,Authorization:`Bearer ${key}`}});
       const data=await res.json();
-      if(data&&data[0]){dispatch({type:"LOAD_STATE",data:{cameras:JSON.parse(data[0].cameras),activeCamId:data[0].active_cam}});setMsg({ok:true,text:"Geladen ✓"});}
+      if(data&&data[0]){dispatch({type:"LOAD_STATE",data:{cameras: data[0].cameras,activeCamId:data[0].active_cam}});setMsg({ok:true,text:"Geladen ✓"});}
       else setMsg({ok:false,text:"Geen data gevonden"});
     }catch(e){setMsg({ok:false,text:`Fout: ${e.message}`});}
     setLoading(false);
@@ -610,8 +620,6 @@ const testConn = async () => {
       </div>
       {open&&(
         <div style={{padding:"0 14px 14px",display:"flex",flexDirection:"column",gap:"8px"}}>
-          <input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://xxx.supabase.co" style={inp} spellCheck={false}/>
-          <input value={key} onChange={e=>setKey(e.target.value)} placeholder="Anon Key" type="password" style={inp}/>
           <div style={{display:"flex",gap:"6px"}}>
             {[["Test",testConn,testing,"#6366f1"],["Opslaan",saveState,saving,"#22c55e"],["Laden",loadState,loading,"#FFB800"]].map(([lbl,fn,busy,col])=>(
               <button key={lbl} onClick={fn} disabled={busy} style={{flex:1,padding:"6px",borderRadius:"6px",
