@@ -914,25 +914,44 @@ if (isMobile) return (
           CAMERAS
         </div>
 
-        {/* FIXED GRID (PATCH 3) */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
-          gap: "6px",
-          width: "100%"
-        }}>
-          {state.cameras.slice(0, 5).map(cam => (
-            <div key={cam.id} style={{ minWidth: 0 }}>
-              <CameraCard
-                cam={cam}
-                presets={state.presets[cam.id]}
-                state={state}
-                dispatch={dispatch}
-                isMobile
-              />
-            </div>
-          ))}
-        </div>
+       {/* FIXED 5 PANEL GRID (PATCH 3 - STABLE) */}
+<div style={{
+  display: "grid",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gap: "6px",
+  width: "100%",
+  alignItems: "stretch"
+}}>
+  {Array.from({ length: 5 }).map((_, i) => {
+    const cam = state.cameras[i];
+
+    if (!cam) {
+      return (
+        <div key={`empty-${i}`} style={{
+          height: "120px",
+          border: "1px dashed #1e2140",
+          borderRadius: "10px",
+          background: "#0a0c18"
+        }} />
+      );
+    }
+
+    return (
+      <div key={cam.id} style={{
+        minWidth: 0,
+        height: "120px"
+      }}>
+        <CameraCard
+          cam={cam}
+          presets={state.presets[cam.id]}
+          state={state}
+          dispatch={dispatch}
+          isMobile
+        />
+      </div>
+    );
+  })}
+</div>
 
       </div>
 
