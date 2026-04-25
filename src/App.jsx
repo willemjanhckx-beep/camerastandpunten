@@ -723,13 +723,14 @@ function SupabasePanel({ state, dispatch }) {
     if (!connected) { setMsg({ ok: false, text: "Eerst verbinding testen" }); return; }
     setBusyKey("save", true); setMsg(null);
     try {
-      const cleanCameras = state.cameras.map(({ active, ...rest }) => rest);
-      const body = JSON.stringify({
-        id:         "main",
-        cameras:    cleanCameras,         // store as JSONB (no JSON.stringify needed — fetch does it)
-        active_cam: state.activeCamId,
-        updated_at: new Date().toISOString(),
-      });
+const cleanCameras = state.cameras.map(({ active, ...rest }) => rest);
+
+const body = JSON.stringify({
+  id: "main",
+  cameras: cleanCameras,
+  active_cam: state.activeCamId,
+  updated_at: new Date().toISOString(),
+});
       const res = await fetch(`${url}/rest/v1/camera_states`, {
         method: "POST",
         headers: headers({ Prefer: "resolution=merge-duplicates" }),
