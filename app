@@ -171,18 +171,20 @@ function reducer(state, action) {
     case "TOGGLE_LABELS":  return {...state,showLabels:!state.showLabels};
     case "SET_HL_CAM":     return {...state,highlightedCam:action.id};
     case "CLEAR_HL_CAM":   return {...state,highlightedCam:null};
-case "LOAD_STATE":
+
+case "LOAD_STATE": {
+  const cameras = action.data.cameras.map(c => ({
+    ...c,
+    active: c.id === action.data.activeCamId
+  }));
+
   return {
     ...state,
-    cameras: action.data.cameras.map(c => ({
-      ...c,
-      active: c.id === action.data.activeCamId
-    })),
+    cameras,
+    presets: buildPresets(cameras), // 🔥 BELANGRIJK
     activeCamId: action.data.activeCamId,
     recentlyUsed: [] // reset om rare suggesties te vermijden
   };
-    default: return state;
-  }
 }
 
 const initCams = DEFAULT_CAMERAS.map((c,i)=>({...c,active:i===0}));
