@@ -4,23 +4,6 @@ import { useState, useRef, useEffect, useCallback, useReducer, useMemo } from "r
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────
 
-const initCams = DEFAULT_CAMERAS.map((c, i) => ({
-  ...c,
-  active: i === 0
-}));
-
-const initState = {
-  cameras: initCams,
-  sections: SECTIONS.map(s => ({ ...s })),
-  presets: buildPresets(initCams),
-  activeCamId: 1,
-  targetSection: null,
-  nextShotOpen: false,
-  highlightedCam: null,
-  recentlyUsed: [],
-  showFov: true,
-  showLabels: true,
-};
 
 const CAM_COLORS = ["#FF3D5A","#00E5A0","#3DA9FF","#FFB800","#C44DFF"];
 
@@ -159,6 +142,23 @@ function fovPoly(cam, len=230) {
     rx:cam.x+Math.cos(ra)*len,ry:cam.y+Math.sin(ra)*len, mx:cam.x+Math.cos(mid)*(len*0.5),my:cam.y+Math.sin(mid)*(len*0.5) };
 }
 
+const initCams = DEFAULT_CAMERAS.map((c, i) => ({
+  ...c,
+  active: i === 0
+}));
+
+const initState = {
+  cameras: initCams,
+  sections: SECTIONS.map(s => ({ ...s })),
+  presets: buildPresets(initCams),
+  activeCamId: 1,
+  targetSection: null,
+  nextShotOpen: false,
+  highlightedCam: null,
+  recentlyUsed: [],
+  showFov: true,
+  showLabels: true,
+};
 // ─────────────────────────────────────────────────────────────────
 // REDUCER
 // ─────────────────────────────────────────────────────────────────
