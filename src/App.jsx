@@ -3,6 +3,25 @@ import { useState, useRef, useEffect, useCallback, useReducer, useMemo } from "r
 // ─────────────────────────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────
+
+const initCams = DEFAULT_CAMERAS.map((c, i) => ({
+  ...c,
+  active: i === 0
+}));
+
+const initState = {
+  cameras: initCams,
+  sections: SECTIONS.map(s => ({ ...s })),
+  presets: buildPresets(initCams),
+  activeCamId: 1,
+  targetSection: null,
+  nextShotOpen: false,
+  highlightedCam: null,
+  recentlyUsed: [],
+  showFov: true,
+  showLabels: true,
+};
+
 const CAM_COLORS = ["#FF3D5A","#00E5A0","#3DA9FF","#FFB800","#C44DFF"];
 
 // W=800, H=580
@@ -144,57 +163,107 @@ function fovPoly(cam, len=230) {
 // REDUCER
 // ─────────────────────────────────────────────────────────────────
 function reducer(state, action) {
-  switch(action.type) {
+  switch (action.type) {
+
     case "SET_ACTIVE": {
-      const prev = state.cameras.find(c=>c.active);
-      const recentlyUsed = prev ? [...new Set([prev.id,...state.recentlyUsed])].slice(0,3) : state.recentlyUsed;
-      return { ...state, recentlyUsed, activeCamId:action.id, cameras:state.cameras.map(c=>({...c,active:c.id===action.id})) };
+      const prev = state.cameras.find(c => c.active);
+      const recentlyUsed = prev
+        ? [...new Set([prev.id, ...state.recentlyUsed])].slice(0, 3)
+        : state.recentlyUsed;
+
+      return {
+        ...state,
+        recentlyUsed,
+        activeCamId: action.id,
+        cameras: state.cameras.map(c => ({
+          ...c,
+          active: c.id === action.id
+        }))
+      };
     }
+
     case "APPLY_PRESET": {
-      const preset = state.presets[action.camId]?.find(p=>p.id===action.presetId);
-      if(!preset) return state;
-      const sec = state.sections.find(s=>s.id===preset.sectionId);
-      if(!sec) return state;
-      const cam = state.cameras.find(c=>c.id===action.camId);
+      const preset = state.presets[action.camId]?.find(p => p.id === action.presetId);
+      if (!preset) return state;
+
+      const sec = state.sections.find(s => s.id === preset.sectionId);
+      if (!sec) return state;
+
+      const cam = state.cameras.find(c => c.id === action.camId);
       const newAngle = angleTo(cam, secCenter(sec));
-      const prev = state.cameras.find(c=>c.active);
-      const recentlyUsed = prev ? [...new Set([prev.id,...state.recentlyUsed])].slice(0,3) : state.recentlyUsed;
-      return { ...state, recentlyUsed, activeCamId:action.camId,
-        cameras:state.cameras.map(c=>c.id===action.camId?{...c,angle:newAngle,presetId:action.presetId,active:true}:{...c,active:false}) };
+
+      const prev = state.cameras.find(c => c.active);
+      const recentlyUsed = prev
+        ? [...new Set([prev.id, ...state.recentlyUsed])].slice(0, 3)
+        : state.recentlyUsed;
+
+      return {
+        ...state,
+        recentlyUsed,
+        activeCamId: action.camId,
+        cameras: state.cameras.map(c =>
+          c.id === action.camId
+            ? { ...c, angle: newAngle, presetId: action.presetId, active: true }
+            : { ...c, active: false }
+        )
+      };
     }
-    case "MOVE_CAM":   return {...state,cameras:state.cameras.map(c=>c.id===action.id?{...c,x:action.x,y:action.y}:c)};
-    case "MOVE_SEC":   return {...state,sections:state.sections.map(s=>s.id===action.id?{...s,x:action.x,y:action.y}:s)};
-    case "SET_TARGET_SEC": return {...state,targetSection:action.id,nextShotOpen:true};
-    case "CLEAR_TARGET":   return {...state,targetSection:null,nextShotOpen:false};
-    case "TOGGLE_FOV":     return {...state,showFov:!state.showFov};
-    case "TOGGLE_LABELS":  return {...state,showLabels:!state.showLabels};
-    case "SET_HL_CAM":     return {...state,highlightedCam:action.id};
-    case "CLEAR_HL_CAM":   return {...state,highlightedCam:null};
 
-case "LOAD_STATE": {
-  const cams = action?.data?.cameras ?? state.cameras;
+    case "MOVE_CAM":
+      return {
+        ...state,
+        cameras: state.cameras.map(c =>
+          c.id === action.id ? { ...c, x: action.x, y: action.y } : c
+        )
+      };
 
-  const rebuiltCams = cams.map(c => ({
-    ...c,
-    active: c.id === action?.data?.activeCamId
-  }));
+    case "MOVE_SEC":
+      return {
+        ...state,
+        sections: state.sections.map(s =>
+          s.id === action.id ? { ...s, x: action.x, y: action.y } : s
+        )
+      };
 
-  return {
-    ...state,
-    cameras: rebuiltCams,
-    presets: buildPresets(rebuiltCams),
-    activeCamId: action?.data?.activeCamId ?? state.activeCamId,
-    recentlyUsed: [],
-  };
+    case "SET_TARGET_SEC":
+      return { ...state, targetSection: action.id, nextShotOpen: true };
+
+    case "CLEAR_TARGET":
+      return { ...state, targetSection: null, nextShotOpen: false };
+
+    case "TOGGLE_FOV":
+      return { ...state, showFov: !state.showFov };
+
+    case "TOGGLE_LABELS":
+      return { ...state, showLabels: !state.showLabels };
+
+    case "SET_HL_CAM":
+      return { ...state, highlightedCam: action.id };
+
+    case "CLEAR_HL_CAM":
+      return { ...state, highlightedCam: null };
+
+    case "LOAD_STATE": {
+      const cams = action?.data?.cameras ?? state.cameras;
+
+      const rebuiltCams = cams.map(c => ({
+        ...c,
+        active: c.id === action?.data?.activeCamId
+      }));
+
+      return {
+        ...state,
+        cameras: rebuiltCams,
+        presets: buildPresets(rebuiltCams),
+        activeCamId: action?.data?.activeCamId ?? state.activeCamId,
+        recentlyUsed: []
+      };
+    }
+
+    default:
+      return state;
+  }
 }
-
-const initCams = DEFAULT_CAMERAS.map((c,i)=>({...c,active:i===0}));
-const initState = {
-  cameras:initCams, sections:SECTIONS.map(s=>({...s})), presets:buildPresets(initCams),
-  activeCamId:1, targetSection:null, nextShotOpen:false, highlightedCam:null,
-  recentlyUsed:[], showFov:true, showLabels:true,
-};
-
 // ─────────────────────────────────────────────────────────────────
 // STAGE MAP  (dark theme like v1)
 // ─────────────────────────────────────────────────────────────────
