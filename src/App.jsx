@@ -195,7 +195,18 @@ if (!sec) return state;
     }
 
     case "MOVE_CAM":
-      return { ...state, cameras: state.cameras.map(c => c.id === action.id ? { ...c, x: action.x, y: action.y } : c) };
+  return {
+    ...state,
+    cameras: state.cameras.map(c =>
+      c.id === action.id
+        ? {
+            ...c,
+            x: Math.max(0, Math.min(W, action.x)),
+            y: Math.max(0, Math.min(H, action.y)),
+          }
+        : c
+    ),
+  };
 
     case "SET_TARGET_SEC":
       return { ...state, targetSection: action.id, nextShotOpen: true };
@@ -270,7 +281,7 @@ const camTargets = useMemo(() => {
     if (p) t[cam.id] = p.sectionId;
   });
   return t;
-}, [presetMap, state.cameras]);
+}, [presetMap, state.cameras.map(c => c.presetId).join(",")]);
 
   const svgCoords = useCallback((clientX, clientY) => {
     const rect = svgRef.current.getBoundingClientRect();
