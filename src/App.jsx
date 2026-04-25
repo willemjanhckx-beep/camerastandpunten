@@ -249,15 +249,25 @@ function StageMap({ state, dispatch, highlightSectionId }) {
   return Object.fromEntries(state.sections.map(s => [s.id, s]));
 }, [state.sections]);
 
-  const camTargets = useMemo(() => {
-    const t = {};
-    state.cameras.forEach(cam => {
-      if (!cam.presetId) return;
-      const p = state.presets[cam.id]?.find(p => p.id === cam.presetId);
-      if (p) t[cam.id] = p.sectionId;
-    });
-    return t;
-  }, [state.cameras, state.presets]);
+  const presetMap = useMemo(() => {
+  const map = {};
+  state.cameras.forEach(cam => {
+    map[cam.id] = new Map(
+      (state.presets[cam.id] || []).map(p => [p.id, p])
+    );
+  });
+  return map;
+}, [state.presets, state.cameras.length]);
+
+const camTargets = useMemo(() => {
+  const t = {};
+  state.cameras.forEach(cam => {
+    if (!cam.presetId) return;
+    const p = presetMap[cam.id]?.get(cam.presetId);
+    if (p) t[cam.id] = p.sectionId;
+  });
+  return t;
+}, [presetMap, state.cameras]);
 
   const svgCoords = useCallback((clientX, clientY) => {
     const rect = svgRef.current.getBoundingClientRect();
@@ -950,7 +960,7 @@ if (isMobile) return (
 
     if (!cam) {
       return (
-        <div key={`empty-${i}`} style={{
+        <div key={`slot-${i}`} style={{
           height: "120px",
           border: "1px dashed #1e2140",
           borderRadius: "10px",
