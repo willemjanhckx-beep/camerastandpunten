@@ -257,7 +257,7 @@ function StageMap({ state, dispatch, highlightSectionId }) {
     );
   });
   return map;
-}, [state.presets, state.cameras.length]);
+}, [state.presets, state.cameras]);
 
 const camTargets = useMemo(() => {
   const t = {};
