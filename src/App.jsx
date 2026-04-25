@@ -183,11 +183,6 @@ function reducer(state, action) {
       };
     }
 
-    default:
-      return state;
-  }
-}
-
     case "APPLY_PRESET": {
       const preset = state.presets[action.camId]?.find(p => p.id === action.presetId);
       if (!preset) return state;
