@@ -837,6 +837,7 @@ const GLOBAL_CSS = `
 export default function App() {
   const [state, dispatch] = useReducer(reducer, undefined, mkInitState);
   const [isMobile, setIsMobile] = useState(false);
+  const [presetsCollapsed, setPresetsCollapsed] = useState(false);
 
   useEffect(() => {
     const el = document.createElement("style");
@@ -852,101 +853,178 @@ export default function App() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // ── MOBILE ──────────────────────────────────────────────────────
-  if (isMobile) return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "#080a16", overflow: "hidden" }}>
-      <div style={{ padding: "8px 14px", background: "#080a16", borderBottom: "1px solid #12142a", flexShrink: 0 }}>
-        <div style={{ fontFamily: "'Exo 2',sans-serif", fontSize: "12px", fontWeight: "900", color: "#FFD447", letterSpacing: "3px" }}>CAMERA PLANNER</div>
-        <div style={{ fontSize: "7px", color: "#2a2d50", letterSpacing: "2px" }}>MUZIEKKAPEL VAN DE GIDSEN</div>
+ // ── MOBILE ──────────────────────────────────────────────────────
+if (isMobile) return (
+  <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "#080a16", overflow: "hidden" }}>
+
+    {/* Header */}
+    <div style={{ padding: "8px 14px", background: "#080a16", borderBottom: "1px solid #12142a", flexShrink: 0 }}>
+      <div style={{ fontFamily: "'Exo 2',sans-serif", fontSize: "12px", fontWeight: "900", color: "#FFD447", letterSpacing: "3px" }}>
+        CAMERA PLANNER
+      </div>
+      <div style={{ fontSize: "7px", color: "#2a2d50", letterSpacing: "2px" }}>
+        MUZIEKKAPEL VAN DE GIDSEN
+      </div>
+    </div>
+
+    <LiveStatusBar state={state} />
+
+    {/* Presets toggle */}
+    <button
+      onClick={() => setPresetsCollapsed(v => !v)}
+      style={{
+        padding: "6px 10px",
+        fontSize: "8px",
+        fontFamily: "monospace",
+        background: "#0c0e1e",
+        border: "1px solid #2a2d50",
+        color: "#aaa",
+        borderRadius: "6px",
+        cursor: "pointer"
+      }}
+    >
+      PRESETS {presetsCollapsed ? "▲" : "▼"}
+    </button>
+
+    {/* Stage map */}
+    <div style={{ flexShrink: 0, height: "42dvh", position: "relative", background: "#0a0c18", borderBottom: "1px solid #12142a" }}>
+      <StageMap state={state} dispatch={dispatch} highlightSectionId={state.targetSection} />
+      <MapToolbar state={state} dispatch={dispatch} />
+    </div>
+
+    {/* Content */}
+    <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+
+      <div style={{ padding: "10px 10px 6px", borderBottom: "1px solid #12142a", flexShrink: 0 }}>
+        <div style={{ fontSize: "8px", color: "#2a2d50", fontFamily: "monospace", letterSpacing: "2px", marginBottom: "8px" }}>
+          CAMERAS
+        </div>
+
+        <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
+          {state.cameras.map(cam => (
+            <CameraCard
+              key={cam.id}
+              cam={cam}
+              presets={state.presets[cam.id]}
+              state={state}
+              dispatch={dispatch}
+              isMobile
+            />
+          ))}
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        <div style={{ padding: "10px 14px 4px", borderBottom: "1px solid #12142a" }}>
+          <div style={{ fontSize: "8px", color: "#2a2d50", fontFamily: "monospace", letterSpacing: "2px" }}>
+            VOLGENDE SHOT
+          </div>
+        </div>
+        <NextShotModule state={state} dispatch={dispatch} />
+      </div>
+
+      <SupabasePanel state={state} dispatch={dispatch} />
+    </div>
+  </div>
+);
+
+
+// ── DESKTOP ─────────────────────────────────────────────────────
+return (
+  <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#080a16", overflow: "hidden" }}>
+
+    {/* Header */}
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "10px 20px",
+      background: "#080a16",
+      borderBottom: "1px solid #12142a",
+      flexShrink: 0
+    }}>
+      <div>
+        <div style={{ fontFamily: "'Exo 2',sans-serif", fontSize: "15px", fontWeight: "900", color: "#FFD447", letterSpacing: "4px" }}>
+          CAMERA PLANNER
+        </div>
+        <div style={{ fontSize: "8px", color: "#2a2d50", letterSpacing: "3px", marginTop: "1px" }}>
+          HENRY LE BŒUF HALL · MUZIEKKAPEL VAN DE GIDSEN
+        </div>
       </div>
 
       <LiveStatusBar state={state} />
+    </div>
 
-      <div style={{ flexShrink: 0, height: "42dvh", position: "relative", background: "#0a0c18", borderBottom: "1px solid #12142a" }}>
-        <StageMap state={state} dispatch={dispatch} highlightSectionId={state.targetSection} />
+    {/* MAIN */}
+    <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
+
+      {/* MAP */}
+      <div style={{
+        flex: 1,
+        position: "relative",
+        minWidth: 0,
+        background: "radial-gradient(ellipse at 50% 35%, #0e1030 0%, #080a16 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "16px"
+      }}>
+        <div style={{
+          width: "100%",
+          maxWidth: "840px",
+          aspectRatio: "800/580",
+          border: "1px solid #1a1d35",
+          borderRadius: "14px",
+          overflow: "hidden",
+          boxShadow: "0 0 80px #00001a",
+          position: "relative"
+        }}>
+          <StageMap state={state} dispatch={dispatch} highlightSectionId={state.targetSection} />
+        </div>
+
         <MapToolbar state={state} dispatch={dispatch} />
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "10px 10px 6px", borderBottom: "1px solid #12142a", flexShrink: 0 }}>
-          <div style={{ fontSize: "8px", color: "#2a2d50", fontFamily: "monospace", letterSpacing: "2px", marginBottom: "8px" }}>CAMERAS</div>
-          <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
-            {state.cameras.map(cam => (
-              <CameraCard key={cam.id} cam={cam} presets={state.presets[cam.id]} state={state} dispatch={dispatch} isMobile />
-            ))}
+      {/* RIGHT PANEL */}
+      <div style={{
+        width: "300px",
+        minWidth: "270px",
+        background: "#080a16",
+        borderLeft: "1px solid #12142a",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden"
+      }}>
+
+        <div style={{ overflowY: "auto", padding: "12px", borderBottom: "1px solid #12142a", maxHeight: "50%" }}>
+          <div style={{ fontSize: "8px", color: "#2a2d50", fontFamily: "monospace", letterSpacing: "2px", marginBottom: "10px" }}>
+            CAMERAS — {state.cameras.filter(c => c.active).length} ACTIEF
           </div>
+
+          {state.cameras.map(cam => (
+            <CameraCard
+              key={cam.id}
+              cam={cam}
+              presets={state.presets[cam.id]}
+              state={state}
+              dispatch={dispatch}
+              isMobile={false}
+            />
+          ))}
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          <div style={{ padding: "10px 14px 4px", borderBottom: "1px solid #12142a" }}>
-            <div style={{ fontSize: "8px", color: "#2a2d50", fontFamily: "monospace", letterSpacing: "2px" }}>VOLGENDE SHOT</div>
+        <div style={{ flex: 1, overflowY: "auto", borderBottom: "1px solid #12142a" }}>
+          <div style={{ padding: "10px 14px 6px", borderBottom: "1px solid #12142a" }}>
+            <div style={{ fontSize: "8px", color: "#2a2d50", fontFamily: "monospace", letterSpacing: "2px" }}>
+              VOLGENDE SHOT
+            </div>
           </div>
+
           <NextShotModule state={state} dispatch={dispatch} />
         </div>
 
         <SupabasePanel state={state} dispatch={dispatch} />
       </div>
     </div>
-  );
-
-  // ── DESKTOP ─────────────────────────────────────────────────────
-  return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#080a16", overflow: "hidden" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "10px 20px", background: "#080a16", borderBottom: "1px solid #12142a", flexShrink: 0 }}>
-        <div>
-          <div style={{ fontFamily: "'Exo 2',sans-serif", fontSize: "15px", fontWeight: "900", color: "#FFD447", letterSpacing: "4px" }}>
-            CAMERA PLANNER
-          </div>
-          <div style={{ fontSize: "8px", color: "#2a2d50", letterSpacing: "3px", marginTop: "1px" }}>
-            HENRY LE BŒUF HALL · MUZIEKKAPEL VAN DE GIDSEN
-          </div>
-        </div>
-        <LiveStatusBar state={state} />
-      </div>
-
-      {/* Main */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
-
-        {/* Map area */}
-        <div style={{ flex: 1, position: "relative", minWidth: 0,
-          background: "radial-gradient(ellipse at 50% 35%, #0e1030 0%, #080a16 100%)",
-          display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
-          <div style={{ width: "100%", maxWidth: "840px", aspectRatio: "800/580",
-            border: "1px solid #1a1d35", borderRadius: "14px", overflow: "hidden",
-            boxShadow: "0 0 80px #00001a", position: "relative" }}>
-            <StageMap state={state} dispatch={dispatch} highlightSectionId={state.targetSection} />
-          </div>
-          <MapToolbar state={state} dispatch={dispatch} />
-        </div>
-
-        {/* Right panel */}
-        <div style={{ width: "300px", minWidth: "270px", background: "#080a16",
-          borderLeft: "1px solid #12142a", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-
-          {/* Camera list */}
-          <div style={{ overflowY: "auto", padding: "12px", borderBottom: "1px solid #12142a", maxHeight: "50%" }}>
-            <div style={{ fontSize: "8px", color: "#2a2d50", fontFamily: "monospace", letterSpacing: "2px", marginBottom: "10px" }}>
-              CAMERAS — {state.cameras.filter(c => c.active).length} ACTIEF
-            </div>
-            {state.cameras.map(cam => (
-              <CameraCard key={cam.id} cam={cam} presets={state.presets[cam.id]} state={state} dispatch={dispatch} isMobile={false} />
-            ))}
-          </div>
-
-          {/* Next shot */}
-          <div style={{ flex: 1, overflowY: "auto", borderBottom: "1px solid #12142a" }}>
-            <div style={{ padding: "10px 14px 6px", borderBottom: "1px solid #12142a" }}>
-              <div style={{ fontSize: "8px", color: "#2a2d50", fontFamily: "monospace", letterSpacing: "2px" }}>VOLGENDE SHOT</div>
-            </div>
-            <NextShotModule state={state} dispatch={dispatch} />
-          </div>
-
-          {/* Supabase */}
-          <SupabasePanel state={state} dispatch={dispatch} />
-        </div>
-      </div>
-    </div>
-  );
-}
+  </div>
+);
