@@ -696,59 +696,25 @@ function LiveStatusBar({ state }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
-// SUPABASE PANEL  (credentials via UI — no env vars in artifact)
-// ─────────────────────────────────────────────────────────────────
-const INP_STYLE = {
-  padding: "6px 8px", borderRadius: "6px", border: "1px solid #1e2140",
-  fontSize: "9px", fontFamily: "monospace", background: "#0c0e1e", color: "#aaa",
-  width: "100%", outline: "none",
-};
-
-function SupabasePanel({ state, dispatch }) {
-  const [url,       setUrl]       = useState("");
-  const [key,       setKey]       = useState("");
-  const [connected, setConnected] = useState(false);
-  const [open,      setOpen]      = useState(false);
-  const [msg,       setMsg]       = useState(null);
-  const [busy,      setBusy]      = useState({ test: false, save: false, load: false });
+function SyncPanel({ state, dispatch }) {
+  const [open,    setOpen]    = useState(false);
+  const [msg,     setMsg]     = useState(null);
+  const [busy,    setBusy]    = useState({ save: false, load: false });
 
   const setBusyKey = (k, v) => setBusy(b => ({ ...b, [k]: v }));
 
-  const headers = (extra = {}) => ({
-    apikey: key, Authorization: `Bearer ${key}`,
-    "Content-Type": "application/json", ...extra,
-  });
-
-  const testConn = async () => {
-    if (!url || !key) { setMsg({ ok: false, text: "Vul URL en Key in" }); return; }
-    setBusyKey("test", true); setMsg(null);
-    try {
-      const res = await fetch(`${url}/rest/v1/camera_states?limit=1`, { headers: headers() });
-      if (res.ok || res.status === 406) {
-        setConnected(true);
-        setMsg({ ok: true, text: "Verbinding OK ✓" });
-      } else throw new Error(`HTTP ${res.status}`);
-    } catch (e) { setMsg({ ok: false, text: `Fout: ${e.message}` }); }
-    setBusyKey("test", false);
-  };
-
   const saveState = async () => {
-    if (!connected) { setMsg({ ok: false, text: "Eerst verbinding testen" }); return; }
     setBusyKey("save", true); setMsg(null);
     try {
-const cleanCameras = state.cameras.map(({ active, ...rest }) => rest);
-
-const body = JSON.stringify({
-  id: "main",
-  cameras: cleanCameras,
-  active_cam: state.activeCamId,
-  updated_at: new Date().toISOString(),
-});
-      const res = await fetch(`${url}/rest/v1/camera_states`, {
+      const cleanCameras = state.cameras.map(({ active, ...rest }) => rest);
+      const res = await fetch("/api/state", {
         method: "POST",
-        headers: headers({ Prefer: "resolution=merge-duplicates" }),
-        body,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cameras:   cleanCameras,
+          activeCamId: state.activeCamId,
+          savedAt:   new Date().toISOString(),
+        }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setMsg({ ok: true, text: "Opgeslagen ✓" });
@@ -757,85 +723,58 @@ const body = JSON.stringify({
   };
 
   const loadState = async () => {
-    if (!connected) { setMsg({ ok: false, text: "Eerst verbinding testen" }); return; }
     setBusyKey("load", true); setMsg(null);
     try {
-      const res  = await fetch(`${url}/rest/v1/camera_states?id=eq.main&limit=1`, { headers: headers() });
+      const res  = await fetch("/api/state");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (data?.[0]) {
-        // cameras may be stored as JSON string or parsed object
-        const cams = typeof data[0].cameras === "string"
-          ? JSON.parse(data[0].cameras)
-          : data[0].cameras;
-        dispatch({ type: "LOAD_STATE", data: { cameras: cams, activeCamId: data[0].active_cam } });
+      if (data) {
+        dispatch({ type: "LOAD_STATE", data });
         setMsg({ ok: true, text: "Geladen ✓" });
       } else {
-        setMsg({ ok: false, text: "Geen data gevonden" });
+        setMsg({ ok: false, text: "Geen opgeslagen staat gevonden" });
       }
     } catch (e) { setMsg({ ok: false, text: `Fout: ${e.message}` }); }
     setBusyKey("load", false);
   };
 
-  const ACTIONS = [
-    ["Test",     testConn,  busy.test, "#6366f1"],
-    ["Opslaan",  saveState, busy.save, "#22c55e"],
-    ["Laden",    loadState, busy.load, "#FFB800"],
-  ];
-
   return (
     <div style={{ borderTop: "1px solid #12142a", background: "#080a16", flexShrink: 0 }}>
-      {/* Toggle header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "8px 14px", cursor: "pointer", userSelect: "none" }}
         onClick={() => setOpen(o => !o)}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{ width: "7px", height: "7px", borderRadius: "50%",
-            background: connected ? "#22c55e" : "#2a2d50",
-            boxShadow: connected ? "0 0 5px #22c55e" : undefined }} />
-          <span style={{ fontSize: "9px", fontFamily: "monospace", color: "#7070a0", fontWeight: "700", letterSpacing: "2px" }}>SUPABASE</span>
+          <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#22c55e",
+            boxShadow: "0 0 5px #22c55e" }} />
+          <span style={{ fontSize: "9px", fontFamily: "monospace", color: "#7070a0",
+            fontWeight: "700", letterSpacing: "2px" }}>SYNC</span>
         </div>
         <span style={{ fontSize: "11px", color: "#3a3a60" }}>{open ? "▲" : "▼"}</span>
       </div>
 
       {open && (
         <div style={{ padding: "0 14px 14px", display: "flex", flexDirection: "column", gap: "8px" }}>
-          <input value={url} onChange={e => setUrl(e.target.value.trim())}
-            placeholder="https://xxxx.supabase.co" style={INP_STYLE} spellCheck={false} autoComplete="off" />
-          <input value={key} onChange={e => setKey(e.target.value.trim())}
-            placeholder="Anon Key" type="password" style={INP_STYLE} autoComplete="off" />
-
           <div style={{ display: "flex", gap: "6px" }}>
-            {ACTIONS.map(([lbl, fn, isBusy, col]) => (
+            {[
+              ["Opslaan", saveState, busy.save, "#22c55e"],
+              ["Laden",   loadState, busy.load, "#FFB800"],
+            ].map(([lbl, fn, isBusy, col]) => (
               <button key={lbl} onClick={fn} disabled={isBusy}
-                style={{ flex: 1, padding: "7px 0", borderRadius: "6px",
+                style={{ flex: 1, padding: "10px 0", borderRadius: "6px",
                   border: `1px solid ${col}40`, background: `${col}12`, color: col,
-                  fontSize: "9px", fontFamily: "monospace", fontWeight: "700",
+                  fontSize: "10px", fontFamily: "monospace", fontWeight: "700",
                   cursor: isBusy ? "not-allowed" : "pointer", opacity: isBusy ? 0.6 : 1 }}>
                 {isBusy ? "…" : lbl}
               </button>
             ))}
           </div>
-
           {msg && (
-            <div style={{ fontSize: "9px", fontFamily: "monospace", padding: "5px 8px", borderRadius: "4px",
-              color: msg.ok ? "#22c55e" : "#FF3D5A",
+            <div style={{ fontSize: "9px", fontFamily: "monospace", padding: "5px 8px",
+              borderRadius: "4px", color: msg.ok ? "#22c55e" : "#FF3D5A",
               background: msg.ok ? "#052010" : "#200505" }}>
               {msg.text}
             </div>
           )}
-
-          <div style={{ fontSize: "8px", color: "#3a3a60", fontFamily: "monospace", lineHeight: "1.6" }}>
-            Vereiste tabel:<br />
-            <code style={{ color: "#5a5a80" }}>
-              create table camera_states (<br />
-              &nbsp;&nbsp;id text primary key,<br />
-              &nbsp;&nbsp;cameras jsonb,<br />
-              &nbsp;&nbsp;active_cam int,<br />
-              &nbsp;&nbsp;updated_at timestamptz<br />
-              );
-            </code>
-          </div>
         </div>
       )}
     </div>
