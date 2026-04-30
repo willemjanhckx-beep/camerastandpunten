@@ -10,6 +10,6 @@
     "next": "^14",
     "react": "^18",
     "react-dom": "^18",
-    "@vercel/kv": "^1"
+    "@upstash/redis": "^1"
   }
 }
